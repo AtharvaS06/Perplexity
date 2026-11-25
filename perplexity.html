@@ -1535,7 +1535,21 @@
           [1, seqLen]
         );
 
-        const output = await model({ input_ids });
+        // Supply attention_mask (all 1s) and sequential position_ids (0 .. seqLen - 1)
+        // required by the ONNX CausalLM execution graph in Transformers.js
+        const attention_mask = new Tensor(
+          "int64",
+          new BigInt64Array(seqLen).fill(1n),
+          [1, seqLen]
+        );
+
+        const position_ids = new Tensor(
+          "int64",
+          new BigInt64Array(Array.from({ length: seqLen }, (_, i) => BigInt(i))),
+          [1, seqLen]
+        );
+
+        const output = await model({ input_ids, attention_mask, position_ids });
         const logits = output.logits; // shape [1, seqLen, vocabSize]
         const vocabSize = logits.dims[2];
         const logitsData = logits.data; // Float32Array
